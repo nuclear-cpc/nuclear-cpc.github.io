@@ -279,7 +279,7 @@
       
       <div class="help-step">
         <h4>Step 1: Upload Your Card PDF & Base Prompt</h4>
-        <p>In your LLM web app (Gemini, ChatGPT, or Claude), upload your full 20-page Brisnet or DRF PDF once. Select your strategy profile on Tab 1, click <b>"Copy Prompt 1"</b>, and paste it in. The AI will isolate and analyze that specific race.</p>
+        <p>In your LLM web app (Gemini, ChatGPT, or Claude), upload your full Brisnet or DRF PDF once. Select your strategy profile on Tab 1, click <b>"Copy Prompt 1"</b>, and paste it in. The AI will isolate and analyze that specific race.</p>
       </div>
 
       <div class="help-step">
@@ -450,26 +450,37 @@
       const vibeText = vibeProfiles[vibeKey];
 
       const p1 = `ROLE & TASK:
-You are an expert thoroughbred handicapper analyzing Race ${raceNum}.
+You are an expert quantitative horse racing handicapper analyzing Race ${raceNum} from the attached Past Performances PDF.
 
 ${vibeText}
 
-EVALUATION METHODOLOGY (100-Point Scale):
-- Class & Speed Ratings (Max 35)
-- Form & Recent Evolution (Max 25)
-- Track & Distance Suitability (Max 20)
-- Connections / Trainer & Jockey (Max 20)
+CRITICAL HANDICAPPING RULES TO APPLY:
+1. PACE & SURFACE PHYSICS:
+   - Dirt Races: Check for multiple early front-runners. If a fast pace duel is projected, penalize front-runners and boost deep closers.
+   - Turf Races: Prioritize Late Pace (LP) speed ratings and turn-of-foot over early speed.
+2. FORM AUDIT & FORGIVENESS:
+   - Do NOT penalize horses with proven back-class for a single bad trip (bumped, wide turn, bad break).
+   - Give extra weight to positive state changes: 1st-time Lasix, new geldings, or 3rd start off a layoff.
+3. DEVELOPING 3YO UPSIDE:
+   - Lightly-raced 3-year-olds facing older horses have uncapped growth potential; do not strictly limit them by outdated juvenile speed figures.
 
 OUTPUT FORMAT:
-Provide your analysis followed by this exact code block at the very end:
+Provide your concise race analysis followed by this exact format:
 
+### RACE ${raceNum} TOP 4 CONTENDERS (Detailed)
+For Ranks 1 through 4, provide a brief 2-sentence breakdown covering: Speed/Class, Pace Style, and Key Rationale.
+
+### REMAINING FIELD (Single-Line Scrub)
+For Ranks 5+, provide ONLY a 1-line summary: "#[No.] [Name]: [1-sentence reason for lower rank]"
+
+### STRUCTURED SUMMARY CODE BLOCK
 \`\`\`text
 RACE: ${raceNum}
 MODEL: [Model Name]
 HORSE_SCORES:
 #1 [Name]: Score=[X]/100 | Style=[Frontrunner/Presser/Closer] | Rationale=[1 sentence]
-... [List all horses]
-PACE_PREDICTION: [Slow / Fast / Contested]
+... [List all horses in field]
+PACE_PREDICTION: [Slow / Fast / Contested Meltdown]
 \`\`\``;
 
       document.getElementById(`p1-text-${raceNum}`).innerText = p1;
