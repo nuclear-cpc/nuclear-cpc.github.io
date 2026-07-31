@@ -1,251 +1,427 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title>Quant Racing Dashboard (Win & Exacta Focus)</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Multi-Race AI Handicapping Dashboard</title>
   <style>
     :root {
       --bg: #0f172a;
       --card-bg: #1e293b;
-      --border: #334155;
-      --accent: #38bdf8;
-      --accent-hover: #0284c7;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
       --text: #f8fafc;
       --text-muted: #94a3b8;
-      --success: #22c55e;
-      --warning: #f59e0b;
+      --border: #334155;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+      line-height: 1.5;
+    }
+    h1 { color: #60a5fa; margin-bottom: 0.25rem; }
+    p.subtitle { color: var(--text-muted); margin-bottom: 1rem; }
+
+    /* RESOURCE LINKS BAR */
+    .resource-bar {
+      display: flex;
+      gap: 0.75rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.25rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .resource-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .resource-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #0f172a;
+      color: #93c5fd;
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .resource-link:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
-    
-    .container { max-width: 1000px; margin: 0 auto; }
-    
-    header { border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-    h1 { font-size: 1.5rem; color: var(--accent); }
-    .badge { background: #0369a1; color: #e0f2fe; padding: 4px 8px; borderRadius: 4px; font-size: 0.8rem; font-weight: 600; }
+    /* TAB NAVIGATION BAR */
+    .tab-bar {
+      display: flex;
+      gap: 0.25rem;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .tab-btn {
+      background: #1e293b;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover { background: #334155; color: var(--text); }
+    .tab-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .add-tab-btn {
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .add-tab-btn:hover { background: #10b981; }
 
-    /* Tabs */
-    .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
-    .tab-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text-muted); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-    .tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+    /* RACE WORKSPACE CONTENT */
+    .race-pane { display: none; }
+    .race-pane.active { display: block; }
 
-    /* Card Panels */
-    .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-    .panel h2 { font-size: 1.1rem; margin-bottom: 12px; color: var(--accent); display: flex; align-items: center; justify-content: space-between; }
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .step-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #93c5fd;
+    }
     
-    /* Controls */
-    label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
-    select, textarea, input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 6px; font-size: 0.9rem; margin-bottom: 15px; }
-    textarea { resize: vertical; min-height: 100px; font-family: monospace; }
+    .radio-group {
+      display: flex;
+      gap: 1rem;
+      background: #0f172a;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .radio-option { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer; }
 
-    .btn { background: var(--accent); color: #000; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s; }
+    textarea {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.75rem;
+    }
     .btn:hover { background: var(--accent-hover); }
-    .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
-    .btn-secondary:hover { background: var(--border); }
+    .btn-secondary { background: #475569; }
 
-    .code-box { background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; word-break: break-all; max-height: 250px; overflow-y: auto; color: var(--text-muted); }
-    
-    .flex-row { display: flex; gap: 12px; }
-    .flex-1 { flex: 1; }
-    
-    .external-link { color: var(--accent); text-decoration: none; font-size: 0.85rem; font-weight: 600; }
-    .external-link:hover { text-decoration: underline; }
+    .prompt-box {
+      background: #090d16;
+      border: 1px dashed var(--border);
+      padding: 0.75rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 180px;
+      overflow-y: auto;
+      margin-top: 0.5rem;
+    }
+    .flex-group { display: flex; gap: 1rem; }
+    .flex-group > div { flex: 1; }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <header>
-    <h1>🏇 Quant Racing Dashboard</h1>
-    <span class="badge">WIN & EXACTA ONLY</span>
-  </header>
+  <h1>Multi-Race AI Handicapping Dashboard</h1>
+  <p class="subtitle">Tabbed multi-race card management with direct DRF text paste (Win & Exacta Focus).</p>
 
-  <!-- Race Tabs 1-10 -->
-  <div class="tabs" id="race-tabs"></div>
+  <!-- QUICK RESOURCE LINKS BAR -->
+  <div class="resource-bar">
+    <span class="resource-label">Get Past Performances:</span>
+    <a href="https://www.drf.com/classic-pp" target="_blank" rel="noopener" class="resource-link">
+      📄 DRF Classic PPs ↗
+    </a>
+    <a href="https://www.brisnet.com/product/past-performances" target="_blank" rel="noopener" class="resource-link">
+      📊 Brisnet PPs ↗
+    </a>
+  </div>
 
-  <!-- Main Workflow Area -->
-  <div id="tab-content"></div>
-</div>
+  <!-- DYNAMIC TAB BAR -->
+  <div class="tab-bar" id="tabBar"></div>
 
-<script>
-  const TOTAL_RACES = 10;
-  let currentRace = 1;
+  <!-- CONTAINER FOR RACE PANES -->
+  <div id="raceContainer"></div>
 
-  const vibeProfiles = {
-    balanced: "STRATEGY PROFILE: Balanced Quantitative Focus. Optimize for raw score accuracy while capturing positive EV overlays.",
-    conservative: "STRATEGY PROFILE: Conservative / High Probability. Favor proven class and baseline figures. Minimize longshot risk.",
-    longshot: "STRATEGY PROFILE: Longshot Hunter / Max EV. Actively hunt for market inefficiencies, pace meltdowns, and high-odds overlays."
-  };
+  <script>
+    let raceCount = 8; 
+    let activeRace = 1;
 
-  // Initialize Tabs
-  function initTabs() {
-    const tabsContainer = document.getElementById('race-tabs');
-    tabsContainer.innerHTML = '';
-    for (let i = 1; i <= TOTAL_RACES; i++) {
-      const btn = document.createElement('button');
-      btn.className = `tab-btn ${i === currentRace ? 'active' : ''}`;
-      btn.innerText = `Race ${i}`;
-      btn.onclick = () => switchRace(i);
-      tabsContainer.appendChild(btn);
+    const vibeProfiles = {
+      conservative: "Low-Variance / Conservative strategy: Prioritize consistency, top trainer/jockey win %, and class ratings over high-risk longshots.",
+      balanced: "Balanced EV strategy: Balance solid speed fundamentals with moderate market overlays.",
+      risky: "High-Variance / Longshot Hunter strategy: Reward surface/distance changes, class drops, and higher-odds overlays."
+    };
+
+    function initDashboard() {
+      renderTabs();
+      renderPanes();
+      switchTab(1);
     }
-  }
 
-  function switchRace(raceNum) {
-    currentRace = raceNum;
-    initTabs();
-    renderRacePanel();
-  }
+    function renderTabs() {
+      const tabBar = document.getElementById('tabBar');
+      let html = '';
+      for (let i = 1; i <= raceCount; i++) {
+        html += `<button class="tab-btn ${i === activeRace ? 'active' : ''}" onclick="switchTab(${i})">Race ${i}</button>`;
+      }
+      html += `<button class="add-tab-btn" onclick="addRaceTab()">+ Add Race</button>`;
+      tabBar.innerHTML = html;
+    }
 
-  function getSelectedVibe(raceNum) {
-    const select = document.getElementById(`vibe-select-${raceNum}`);
-    return select ? select.value : 'balanced';
-  }
+    function addRaceTab() {
+      raceCount++;
+      renderTabs();
+      renderPanes();
+      switchTab(raceCount);
+    }
 
-  function generatePrompt1(raceNum) {
-    const vibeKey = getSelectedVibe(raceNum);
-    const vibeText = vibeProfiles[vibeKey];
+    function switchTab(raceNum) {
+      activeRace = raceNum;
+      
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach((btn, index) => {
+        if (index + 1 === raceNum) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
 
-    return `ROLE & TASK:
-You are an expert quantitative horse racing handicapper analyzing Race ${raceNum} from the attached Past Performances PDF.
+      const panes = document.querySelectorAll('.race-pane');
+      panes.forEach((pane) => {
+        if (pane.id === `race-pane-${raceNum}`) pane.classList.add('active');
+        else pane.classList.remove('active');
+      });
+    }
+
+    function renderPanes() {
+      const container = document.getElementById('raceContainer');
+      
+      for (let i = 1; i <= raceCount; i++) {
+        if (!document.getElementById(`race-pane-${i}`)) {
+          const paneHTML = document.createElement('div');
+          paneHTML.className = `race-pane`;
+          paneHTML.id = `race-pane-${i}`;
+          paneHTML.innerHTML = createRaceFormHTML(i);
+          container.appendChild(paneHTML);
+          updatePrompt1(i);
+        }
+      }
+    }
+
+    function createRaceFormHTML(raceNum) {
+      return `
+        <!-- STEP 1 -->
+        <div class="step-card">
+          <div class="step-title">Race ${raceNum} — Step 1: Base Analysis Prompt</div>
+          
+          <div class="radio-group">
+            <label class="radio-option">
+              <input type="radio" name="vibe-${raceNum}" value="conservative" onchange="updatePrompt1(${raceNum})" /> Conservative
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="vibe-${raceNum}" value="balanced" checked onchange="updatePrompt1(${raceNum})" /> Balanced
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="vibe-${raceNum}" value="risky" onchange="updatePrompt1(${raceNum})" /> Longshot Hunter
+            </label>
+          </div>
+
+          <div class="prompt-box" id="p1-text-${raceNum}">Loading...</div>
+          <button class="btn" onclick="copyText('p1-text-${raceNum}')">Copy Prompt 1 (Race ${raceNum})</button>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="step-card">
+          <div class="step-title">Race ${raceNum} — Step 2: Paste Raw DRF / Track Odds Data</div>
+          
+          <label>Paste Raw Text/Odds Copy from DRF or Betting Site:</label>
+          <textarea id="raw-drf-text-${raceNum}" placeholder="Copy and paste the entire live odds board, scratches, weather, or changes text here directly..."></textarea>
+
+          <button class="btn btn-secondary" onclick="generatePrompt2(${raceNum})">Generate Live Update Prompt</button>
+          
+          <div class="prompt-box" id="p2-output-${raceNum}">Paste raw text above and click generate...</div>
+          <button class="btn" onclick="copyText('p2-output-${raceNum}')">Copy Prompt 2 (Race ${raceNum})</button>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="step-card">
+          <div class="step-title">Race ${raceNum} — Step 3: Master Committee Synthesis</div>
+          
+          <div class="flex-group">
+            <div>
+              <label>Claude Summary</label>
+              <textarea id="m1-input-${raceNum}" placeholder="Paste Claude summary..."></textarea>
+            </div>
+            <div>
+              <label>ChatGPT Summary</label>
+              <textarea id="m2-input-${raceNum}" placeholder="Paste ChatGPT summary..."></textarea>
+            </div>
+            <div>
+              <label>Grok Summary</label>
+              <textarea id="m3-input-${raceNum}" placeholder="Paste Grok summary..."></textarea>
+            </div>
+          </div>
+
+          <button class="btn btn-secondary" onclick="generateMasterPrompt(${raceNum})">Compile Master Consensus Prompt</button>
+          
+          <div class="prompt-box" id="master-output-${raceNum}">Paste outputs above and click compile...</div>
+          <button class="btn" onclick="copyText('master-output-${raceNum}')">Copy Master Prompt (Race ${raceNum})</button>
+        </div>
+      `;
+    }
+
+    function getSelectedVibe(raceNum) {
+      const radios = document.getElementsByName(`vibe-${raceNum}`);
+      for (let r of radios) {
+        if (r.checked) return r.value;
+      }
+      return 'balanced';
+    }
+
+    function updatePrompt1(raceNum) {
+      const vibeKey = getSelectedVibe(raceNum);
+      const vibeText = vibeProfiles[vibeKey];
+
+      const p1 = `ROLE & TASK:
+You are an expert thoroughbred handicapper analyzing Race ${raceNum}.
 
 ${vibeText}
 
-CRITICAL HANDICAPPING RULES:
-1. PACE & SURFACE PHYSICS:
-   - Dirt Races: Check for multiple early front-runners. If a fast pace duel is projected, penalize front-runners and boost deep closers.
-   - Turf Races: Prioritize Late Pace (LP) speed ratings and turn-of-foot over early speed.
-2. FORM AUDIT & FORGIVENESS:
-   - Do NOT penalize horses with proven back-class for a single bad trip (bumped, wide turn, bad break).
-   - Give extra weight to positive state changes: 1st-time Lasix, new geldings, or 3rd start off a layoff.
-3. DEVELOPING 3YO UPSIDE:
-   - Lightly-raced 3-year-olds facing older horses have uncapped growth potential; do not strictly limit them by outdated juvenile speed figures.
-4. WAGERING FOCUS (STRICT):
-   - Restrict ALL evaluation and wager recommendations strictly to **WIN** and **EXACTA** bets. Ignore Trifectas, Superfectas, and Multi-Race wagers.
+EVALUATION METHODOLOGY (100-Point Scale):
+- Class & Speed Ratings (Max 35)
+- Form & Recent Evolution (Max 25)
+- Track & Distance Suitability (Max 20)
+- Connections / Trainer & Jockey (Max 20)
+
+WAGERING FOCUS (STRICT):
+Restrict ALL evaluations and wagering structures ONLY to WIN and EXACTA bets. Ignore Trifectas, Superfectas, and Multi-Race wagers.
 
 OUTPUT FORMAT:
-Provide your concise race analysis followed by this exact format:
+Provide your analysis followed by this exact code block at the very end:
 
-### RACE ${raceNum} TOP 4 CONTENDERS (Detailed)
-For Ranks 1 through 4, provide a brief 2-sentence breakdown covering: Speed/Class, Pace Style, and Key Rationale.
-
-### REMAINING FIELD (Single-Line Scrub)
-For Ranks 5+, provide ONLY a 1-line summary: "#[No.] [Name]: [1-sentence reason for lower rank]"
-
-### STRUCTURED SUMMARY CODE BLOCK
 \`\`\`text
 RACE: ${raceNum}
 MODEL: [Model Name]
 HORSE_SCORES:
 #1 [Name]: Score=[X]/100 | Style=[Frontrunner/Presser/Closer] | Rationale=[1 sentence]
-... [List all horses in field]
-PACE_PREDICTION: [Slow / Fast / Contested Meltdown]
+... [List all horses]
+PACE_PREDICTION: [Slow / Fast / Contested]
 \`\`\``;
-  }
 
-  function generatePrompt2(raceNum) {
-    const liveText = document.getElementById(`live-odds-${raceNum}`)?.value || '';
-    
-    return `You are analyzing Race ${raceNum}. 
+      document.getElementById(`p1-text-${raceNum}`).innerText = p1;
+    }
 
-Below is the live track data (scratches, surface changes, and live odds) copied directly from the tote board:
+    function generatePrompt2(raceNum) {
+      const vibeKey = getSelectedVibe(raceNum);
+      const rawText = document.getElementById(`raw-drf-text-${raceNum}`).value.trim() || "[No raw text pasted]";
 
-=== RAW LIVE DATA START ===
-${liveText}
-=== RAW LIVE DATA END ===
+      const p2 = `LIVE RACE-DAY UPDATES FOR RACE ${raceNum}:
 
-INSTRUCTIONS:
-1. Update the field: Strip out all scratched horses and recalibrate winning probabilities for active runners.
-2. Identify Value Overlays: Compare actual live tote odds to model expected win probabilities. Flag any horse where Live Odds > Fair Model Odds.
-3. OUTPUT WAGERING RECOMMENDATIONS (STRICTLY WIN & EXACTA ONLY):
-   - **PRIMARY WIN BET:** Specify the best Expected Value (EV) win wager (e.g., $10 Win on #X).
-   - **EXACTA STRUCTURES:** Output specific, actionable tickets using Straight, Box, or Key Wheel builds (e.g., $2 Exacta Box X-Y, or $2 Exacta Key #X OVER #A, #B, #C).
-   - Do NOT generate Trifectas, Superfectas, or Multi-Race bets.`;
-  }
+Below is the raw text dump from the live DRF / tote board containing current track conditions, scratches, and live odds:
 
-  function renderRacePanel() {
-    const container = document.getElementById('tab-content');
-    container.innerHTML = `
-      <!-- Step 1: Base Analysis -->
-      <div class="panel">
-        <h2>
-          <span>Step 1: Base PDF Analysis (Prompt 1)</span>
-          <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted)">Send to Gemini with PDF</span>
-        </h2>
-        
-        <label for="vibe-select-${currentRace}">Strategy Profile:</label>
-        <select id="vibe-select-${currentRace}" onchange="updatePrompt1Text(${currentRace})">
-          <option value="balanced" selected>Balanced Quantitative (Default)</option>
-          <option value="conservative">Conservative / High Probability</option>
-          <option value="longshot">Longshot Hunter / Max EV</option>
-        </select>
+\`\`\`
+${rawText}
+\`\`\`
 
-        <label>Generated Prompt 1:</label>
-        <div class="code-box" id="p1-text-${currentRace}"></div>
-        <br>
-        <button class="btn" onclick="copyToClipboard('p1-text-${currentRace}')">📋 Copy Prompt 1</button>
-      </div>
+TASKS:
+1. Automatically extract the track condition, scratched horses, and live board odds from the text dump above.
+2. Remove scratched horses and recalculate scores across the remaining field.
+3. Calculate Estimated Win Probability = (Horse Score / Total Field Score).
+4. Convert extracted Live Odds to Implied Probability = 1 / Decimal Odds.
+5. Flag Overlays where Estimated Win Probability > Implied Probability (applying ${vibeKey.toUpperCase()} strategy).
 
-      <!-- Step 2: Live Odds & Prompt 2 -->
-      <div class="panel">
-        <h2>
-          <span>Step 2: Live Odds Calibration (Prompt 2)</span>
-          <a href="https://www.drf.com/news/live-odds-and-results" target="_blank" class="external-link">🏇 DRF Live Odds Board ↗</a>
-        </h2>
+OUTPUT REQUIREMENTS (STRICT):
+Output the final field matrix table, top Value Play, and suggested WIN and EXACTA wager tickets ONLY (Straight Win, Exacta Box, or Exacta Key Wheels). Do NOT suggest Trifectas, Superfectas, or Multi-Race bets.`;
 
-        <label for="live-odds-${currentRace}">Paste Raw Live Data (Scratches, Track Condition, Odds):</label>
-        <textarea id="live-odds-${currentRace}" placeholder="Paste raw text from DRF Live Odds board here..."></textarea>
-        
-        <div class="flex-row">
-          <button class="btn" onclick="updatePrompt2Text(${currentRace})">⚙️ Generate Live Prompt 2</button>
-          <button class="btn btn-secondary" onclick="copyToClipboard('p2-text-${currentRace}')">📋 Copy Prompt 2</button>
-        </div>
+      document.getElementById(`p2-output-${raceNum}`).innerText = p2;
+    }
 
-        <br>
-        <label>Generated Prompt 2:</label>
-        <div class="code-box" id="p2-text-${currentRace}">Select 'Generate Live Prompt 2' after pasting odds.</div>
-      </div>
+    function generateMasterPrompt(raceNum) {
+      const vibeKey = getSelectedVibe(raceNum);
+      const m1 = document.getElementById(`m1-input-${raceNum}`).value;
+      const m2 = document.getElementById(`m2-input-${raceNum}`).value;
+      const m3 = document.getElementById(`m3-input-${raceNum}`).value;
 
-      <!-- Step 3: Results Logger -->
-      <div class="panel">
-        <h2>
-          <span>Step 3: Official Payoff & Post-Mortem Logger</span>
-          <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted)">Optional Post-Race Audit</span>
-        </h2>
-        <label for="results-${currentRace}">Paste Official Finish & Payoff String:</label>
-        <textarea id="results-${currentRace}" placeholder="e.g., Finish: 4-3-2-5. Win $10.88, Exacta $34.96..."></textarea>
-        <button class="btn btn-secondary" onclick="alert('Race ${currentRace} audit saved to session log!')">💾 Save Race Audit</button>
-      </div>
-    `;
+      const master = `ROLE: Master Quantitative Betting Analyst (RACE ${raceNum}).
+STRATEGY PREFERENCE: ${vibeKey.toUpperCase()}
 
-    updatePrompt1Text(currentRace);
-  }
+MODEL 1 SUMMARY:
+${m1}
 
-  function updatePrompt1Text(raceNum) {
-    const text = generatePrompt1(raceNum);
-    const elem = document.getElementById(`p1-text-${raceNum}`);
-    if (elem) elem.innerText = text;
-  }
+MODEL 2 SUMMARY:
+${m2}
 
-  function updatePrompt2Text(raceNum) {
-    const text = generatePrompt2(raceNum);
-    const elem = document.getElementById(`p2-text-${raceNum}`);
-    if (elem) elem.innerText = text;
-  }
+MODEL 3 SUMMARY:
+${m3}
 
-  function copyToClipboard(elementId) {
-    const text = document.getElementById(elementId).innerText;
-    navigator.clipboard.writeText(text).then(() => {
+TASKS:
+1. CONSENSUS MATRIX: Calculate average consensus scores for each horse in Race ${raceNum}.
+2. OVERLAY IDENTIFICATION: Identify horses where consensus win probability beats live market odds.
+3. FINAL TICKET RECOMMENDATION (STRICT): Suggest exact WIN and EXACTA wagers ONLY based on consensus overlays (e.g., $4 Win #X, $2 Exacta Box X/Y, or $1 Exacta Key #X over #A, #B, #C). Do NOT generate Trifectas or Superfectas.`;
+
+      document.getElementById(`master-output-${raceNum}`).innerText = master;
+    }
+
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text);
       alert("Copied to clipboard!");
-    });
-  }
+    }
 
-  // App Start
-  initTabs();
-  renderRacePanel();
-</script>
-
+    window.onload = initDashboard;
+  </script>
 </body>
 </html>
